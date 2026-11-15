@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AppTitle.Text" xml:space="preserve"><value>Duolingo Widget</value></data>
+  <data name="SettingsDescription.Text" xml:space="preserve"><value>Укажите ник Duolingo, чтобы настроить плитку.</value></data>
+  <data name="UsernameLabel.Text" xml:space="preserve"><value>Ник Duolingo</value></data>
+  <data name="UsernameTextBox.PlaceholderText" xml:space="preserve"><value>Введите ник</value></data>
+  <data name="SaveButtonLabel.Text" xml:space="preserve"><value>Сохранить ник</value></data>
+  <data name="EnterUsername" xml:space="preserve"><value>Введите ник Duolingo.</value></data>
+  <data name="Saving" xml:space="preserve"><value>Обновляю плитку...</value></data>
+  <data name="TileUpdated" xml:space="preserve"><value>Сохранено. Плитка обновлена.</value></data>
+  <data name="TileUpdatedBackgroundLimited" xml:space="preserve"><value>Плитка обновлена. Фоновое обновление ограничено Windows.</value></data>
+  <data name="TileUpdateFailed" xml:space="preserve"><value>Не удалось обновить плитку. Проверьте ник и подключение к интернету.</value></data>
+  <data name="StartPinRequestFailed" xml:space="preserve"><value>Плитка обновлена, но не удалось открыть системный запрос на закрепление.</value></data>
+  <data name="SettingsTab.Header" xml:space="preserve"><value>Настройки</value></data>
+  <data name="PresetsTab.Header" xml:space="preserve"><value>Пресеты</value></data>
+  <data name="PresetPeriodLabel.Text" xml:space="preserve"><value>Период</value></data>
+  <data name="MorningPeriodItem.Content" xml:space="preserve"><value>До 12:00</value></data>
+  <data name="AfternoonPeriodItem.Content" xml:space="preserve"><value>После 12:00</value></data>
+  <data name="ActivePeriodItem.Content" xml:space="preserve"><value>Занимался сегодня</value></data>
+  <data name="PresetChoiceLabel.Text" xml:space="preserve"><value>Вариант плитки</value></data>
+  <data name="RandomPreset" xml:space="preserve"><value>Случайный</value></data>
+  <data name="PresetNeedsProfile" xml:space="preserve"><value>Укажите ник Duolingo на вкладке «Настройки», чтобы открыть пресеты.</value></data>
+  <data name="LoadingPresetProfile" xml:space="preserve"><value>Сохраняю ник и загружаю пресеты...</value></data>
+  <data name="PresetNoStreak" xml:space="preserve"><value>При серии 0 дней выбор недоступен — автоматически используется тема 1_1.</value></data>
+  <data name="ApplyPresetButtonLabel.Text" xml:space="preserve"><value>Применить для периода</value></data>
+  <data name="PresetSaved" xml:space="preserve"><value>Пресет сохранён для этого периода и будет применяться автоматически.</value></data>
+  <data name="PresetPreviewTitle" xml:space="preserve"><value>Предпросмотр</value></data>
+  <data name="PresetPeriodToolTip.Content" xml:space="preserve"><value>Выберите, когда использовать этот вариант: до 12:00, после 12:00 или после занятия сегодня.</value></data>
+  <data name="Theme_1_1" xml:space="preserve"><value>Нулевой стрик</value></data>
+  <data name="Theme_1_2" xml:space="preserve"><value>Фиолетовый луч</value></data>
+  <data name="Theme_1_3" xml:space="preserve"><value>Спокойный пурпур</value></data>
+  <data name="Theme_1_4" xml:space="preserve"><value>Сиреневые сумерки</value></data>
+  <data name="Theme_1_5" xml:space="preserve"><value>Сливовая ночь</value></data>
+  <data name="Theme_2_1" xml:space="preserve"><value>Голубой рассвет</value></data>
+  <data name="Theme_2_2" xml:space="preserve"><value>Зелёный импульс</value></data>
+  <data name="Theme_2_3" xml:space="preserve"><value>Огненный закат</value></data>
+  <data name="Theme_2_4" xml:space="preserve"><value>Янтарные искры</value></data>
+  <data name="Theme_2_5" xml:space="preserve"><value>Малиновый заряд</value></data>
+  <data name="Theme_3_1" xml:space="preserve"><value>Мятный свет</value></data>
+  <data name="Theme_3_2" xml:space="preserve"><value>Небесная гладь</value></data>
+  <data name="Theme_3_3" xml:space="preserve"><value>Лавандовый луч</value></data>
+  <data name="Theme_3_4" xml:space="preserve"><value>Солнечный отблеск</value></data>
+</root>

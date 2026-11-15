@@ -1,0 +1,117 @@
+name: Build signed MSIX release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - uses: microsoft/setup-msbuild@v2
+
+      - name: Build signed multi-architecture MSIX bundle
+        shell: pwsh
+        env:
+          MSIX_CERTIFICATE_BASE64: ${{ secrets.MSIX_CERTIFICATE_BASE64 }}
+          MSIX_CERTIFICATE_PASSWORD: ${{ secrets.MSIX_CERTIFICATE_PASSWORD }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:MSIX_CERTIFICATE_BASE64)) {
+            throw 'Set the MSIX_CERTIFICATE_BASE64 GitHub secret.'
+          }
+
+          $version = $env:RELEASE_TAG -replace '^[vV]', ''
+          if ($version -notmatch '^\d+\.\d+\.\d+(\.\d+)?$') {
+            throw 'Use a numeric release tag such as v0.1.0 or v0.1.0.4.'
+          }
+          if (($version.Split('.')).Count -eq 3) {
+            $version = "$version.0"
+          }
+          foreach ($part in $version.Split('.')) {
+            $number = 0
+            if (-not [int]::TryParse($part, [ref]$number) -or $number -gt 65535) {
+              throw "Invalid MSIX version component: $part"
+            }
+          }
+
+          $manifestPath = (Resolve-Path '.\Package.appxmanifest').Path
+          [xml]$manifest = [System.IO.File]::ReadAllText($manifestPath)
+          $identity = $manifest.SelectSingleNode("/*[local-name()='Package']/*[local-name()='Identity']")
+          if ($null -eq $identity) {
+            throw 'Package identity was not found in Package.appxmanifest.'
+          }
+          $identity.SetAttribute('Version', $version)
+          $manifest.Save($manifestPath)
+
+          $certificatePath = Join-Path $env:RUNNER_TEMP 'DuolingoWidget-signing.pfx'
+          $certificateBytes = [Convert]::FromBase64String($env:MSIX_CERTIFICATE_BASE64)
+          [System.IO.File]::WriteAllBytes($certificatePath, $certificateBytes)
+          $certificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
+            $certificatePath,
+            $env:MSIX_CERTIFICATE_PASSWORD)
+          if ($certificate.Subject -ne 'CN=sawaplaygo') {
+            throw 'The signing certificate subject must match Publisher="CN=sawaplaygo" in Package.appxmanifest.'
+          }
+          if (-not $certificate.HasPrivateKey) {
+            throw 'The PFX must contain a private signing key.'
+          }
+          $certificate.Dispose()
+
+          $msbuildArgs = @(
+            '.\DuolingoWidget.csproj',
+            '/restore',
+            '/t:Build',
+            '/p:Configuration=Release',
+            '/p:Platform=x64',
+            '/p:PublishAot=false',
+            '/p:GenerateAppxPackageOnBuild=true',
+            '/p:AppxPackageSigningEnabled=true',
+            '/p:AppxBundle=Always',
+            '/p:AppxBundlePlatforms=x86|x64|arm64',
+            "/p:PackageCertificateKeyFile=$certificatePath",
+            "/p:PackageCertificatePassword=$env:MSIX_CERTIFICATE_PASSWORD",
+            '/p:AppxPackageDir=artifacts\package\'
+          )
+          & msbuild @msbuildArgs
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+          $bundles = @(Get-ChildItem -LiteralPath 'artifacts\package' -Filter '*.msixbundle' -File -Recurse)
+          if ($bundles.Count -ne 1) {
+            throw "Expected one MSIX bundle, found $($bundles.Count)."
+          }
+          Copy-Item -LiteralPath $bundles[0].FullName -Destination "artifacts\DuolingoWidget-$version.msixbundle"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signed-msixbundle
+          path: artifacts/*.msixbundle
+          if-no-files-found: error
+          retention-days: 1
+
+  attach:
+    needs: build
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: signed-msixbundle
+          path: artifacts
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*.msixbundle
+          fail_on_unmatched_files: true

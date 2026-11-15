@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AppTitle.Text" xml:space="preserve"><value>Duolingo Widget</value></data>
+  <data name="SettingsDescription.Text" xml:space="preserve"><value>Enter your Duolingo username to set up your tile.</value></data>
+  <data name="UsernameLabel.Text" xml:space="preserve"><value>Duolingo username</value></data>
+  <data name="UsernameTextBox.PlaceholderText" xml:space="preserve"><value>Enter your username</value></data>
+  <data name="SaveButtonLabel.Text" xml:space="preserve"><value>Save username</value></data>
+  <data name="EnterUsername" xml:space="preserve"><value>Enter your Duolingo username.</value></data>
+  <data name="Saving" xml:space="preserve"><value>Updating your tile...</value></data>
+  <data name="TileUpdated" xml:space="preserve"><value>Saved. Your tile is updated.</value></data>
+  <data name="TileUpdatedBackgroundLimited" xml:space="preserve"><value>Tile updated. Background updates are restricted by Windows.</value></data>
+  <data name="TileUpdateFailed" xml:space="preserve"><value>Could not update the tile. Check the username and internet connection.</value></data>
+  <data name="StartPinRequestFailed" xml:space="preserve"><value>Tile updated, but Windows couldn't open the pin request.</value></data>
+  <data name="SettingsTab.Header" xml:space="preserve"><value>Settings</value></data>
+  <data name="PresetsTab.Header" xml:space="preserve"><value>Presets</value></data>
+  <data name="PresetPeriodLabel.Text" xml:space="preserve"><value>Period</value></data>
+  <data name="MorningPeriodItem.Content" xml:space="preserve"><value>Before 12:00</value></data>
+  <data name="AfternoonPeriodItem.Content" xml:space="preserve"><value>After 12:00</value></data>
+  <data name="ActivePeriodItem.Content" xml:space="preserve"><value>Practiced today</value></data>
+  <data name="PresetChoiceLabel.Text" xml:space="preserve"><value>Tile style</value></data>
+  <data name="RandomPreset" xml:space="preserve"><value>Random</value></data>
+  <data name="PresetNeedsProfile" xml:space="preserve"><value>Enter your Duolingo username on the Settings tab to open presets.</value></data>
+  <data name="LoadingPresetProfile" xml:space="preserve"><value>Saving username and loading presets...</value></data>
+  <data name="PresetNoStreak" xml:space="preserve"><value>No choice when the streak is 0. Theme 1_1 is used automatically.</value></data>
+  <data name="ApplyPresetButtonLabel.Text" xml:space="preserve"><value>Use for this period</value></data>
+  <data name="PresetSaved" xml:space="preserve"><value>Preset saved for this period. It will be used automatically.</value></data>
+  <data name="PresetPreviewTitle" xml:space="preserve"><value>Preview</value></data>
+  <data name="PresetPeriodToolTip.Content" xml:space="preserve"><value>Choose when to use this style: before noon, after noon, or after practicing today.</value></data>
+  <data name="Theme_1_1" xml:space="preserve"><value>Zero streak</value></data>
+  <data name="Theme_1_2" xml:space="preserve"><value>Purple beams</value></data>
+  <data name="Theme_1_3" xml:space="preserve"><value>Soft purple</value></data>
+  <data name="Theme_1_4" xml:space="preserve"><value>Lavender dusk</value></data>
+  <data name="Theme_1_5" xml:space="preserve"><value>Plum night</value></data>
+  <data name="Theme_2_1" xml:space="preserve"><value>Blue sunrise</value></data>
+  <data name="Theme_2_2" xml:space="preserve"><value>Green energy</value></data>
+  <data name="Theme_2_3" xml:space="preserve"><value>Fiery sunset</value></data>
+  <data name="Theme_2_4" xml:space="preserve"><value>Amber sparks</value></data>
+  <data name="Theme_2_5" xml:space="preserve"><value>Raspberry burst</value></data>
+  <data name="Theme_3_1" xml:space="preserve"><value>Mint glow</value></data>
+  <data name="Theme_3_2" xml:space="preserve"><value>Clear sky</value></data>
+  <data name="Theme_3_3" xml:space="preserve"><value>Lavender light</value></data>
+  <data name="Theme_3_4" xml:space="preserve"><value>Sunlit glow</value></data>
+</root>

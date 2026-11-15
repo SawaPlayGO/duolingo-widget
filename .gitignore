@@ -1,0 +1,29 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+artifacts/
+AppPackages/
+BundleArtifacts/
+TestResults/
+
+# Visual Studio user files
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Signing certificates and local publish secrets
+*.pfx
+*.p12
+*.pubxml.user
+Package.StoreAssociation.xml
+
+# Generated packages and release archives
+*.appx
+*.appxbundle
+*.appxupload
+*.msix
+*.msixbundle
+DuolingoWidget-*.zip

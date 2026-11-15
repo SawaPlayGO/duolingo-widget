@@ -1,0 +1,187 @@
+<Page
+    x:Class="DuolingoWidget.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:DuolingoWidget.Controls"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Grid>
+        <Canvas x:Name="RenderHost" Width="310" Height="310"
+                HorizontalAlignment="Left" VerticalAlignment="Top"
+                IsHitTestVisible="False">
+            <controls:LargeTile x:Name="LargeRender" Width="310" Height="310"/>
+            <controls:WideTile x:Name="WideRender" Width="310" Height="150"/>
+            <controls:MediumTile x:Name="MediumRender" Width="150" Height="150"/>
+            <controls:SmallFireTile x:Name="SmallFireRender" Width="71" Height="71"/>
+            <controls:SmallDigitalTile x:Name="SmallDigitalRender" Width="71" Height="71"/>
+        </Canvas>
+
+        <Border Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+            <Pivot x:Name="MainPivot"
+                   Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+                   SelectionChanged="MainPivot_SelectionChanged">
+            <PivotItem x:Uid="SettingsTab" Header="Settings">
+                <ScrollViewer Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+                    <Grid Padding="16">
+                        <Border MaxWidth="420" Padding="24"
+                                HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                                BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                                BorderThickness="1" CornerRadius="12">
+                            <StackPanel Spacing="18">
+                                <StackPanel Spacing="6">
+                                    <TextBlock x:Uid="AppTitle" Text="Duolingo Widget"
+                                               FontSize="26" FontWeight="Bold"/>
+                                    <TextBlock x:Uid="SettingsDescription"
+                                               Text="Enter your Duolingo username to set up your tile."
+                                               TextWrapping="Wrap" Opacity="0.75"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock x:Uid="UsernameLabel" Text="Duolingo username"
+                                               FontWeight="SemiBold"/>
+                                    <TextBox x:Name="UsernameTextBox" x:Uid="UsernameTextBox"
+                                             PlaceholderText="Enter your username"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="12">
+                                    <Button x:Name="SaveButton" Click="SaveButton_Click"
+                                            HorizontalAlignment="Stretch" Height="44"
+                                            Background="#3F665D" Foreground="White">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <FontIcon Glyph="&#xE74E;" FontSize="14"/>
+                                            <TextBlock x:Uid="SaveButtonLabel" Text="Save username"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <TextBlock x:Name="StatusText" TextWrapping="Wrap"
+                                               Opacity="0.85" TextAlignment="Center"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </ScrollViewer>
+            </PivotItem>
+
+            <PivotItem x:Uid="PresetsTab" Header="Presets">
+                <Grid Padding="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="220"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <ScrollViewer Grid.Column="0" Margin="0,0,14,0"
+                                  VerticalScrollBarVisibility="Auto">
+                        <StackPanel Spacing="8">
+                            <TextBlock x:Uid="PresetPeriodLabel" Text="Period"
+                                       FontWeight="SemiBold"/>
+                            <ComboBox x:Name="PresetPeriodComboBox"
+                                      SelectionChanged="PresetPeriodComboBox_SelectionChanged">
+                                <ToolTipService.ToolTip>
+                                    <ToolTip x:Uid="PresetPeriodToolTip"
+                                             Content="Choose when to use this preset."/>
+                                </ToolTipService.ToolTip>
+                                <ComboBoxItem x:Uid="MorningPeriodItem" Content="Before 12:00"
+                                              Tag="morning"/>
+                                <ComboBoxItem x:Uid="AfternoonPeriodItem" Content="After 12:00"
+                                              Tag="afternoon"/>
+                                <ComboBoxItem x:Uid="ActivePeriodItem" Content="Practiced today"
+                                              Tag="active"/>
+                            </ComboBox>
+
+                            <TextBlock x:Uid="PresetChoiceLabel" Text="Tile style"
+                                       FontWeight="SemiBold"/>
+                            <ListView x:Name="PresetThemeList" Height="250"
+                                      SelectionChanged="PresetThemeList_SelectionChanged"/>
+                            <TextBlock x:Name="PresetAvailabilityText"
+                                       TextWrapping="Wrap" Visibility="Collapsed"/>
+                            <Button x:Name="ApplyPresetButton"
+                                    Click="ApplyPresetButton_Click"
+                                    Background="#3F665D" Foreground="White">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon Glyph="&#xE73E;" FontSize="14"/>
+                                    <TextBlock x:Uid="ApplyPresetButtonLabel"
+                                               Text="Use for this period"/>
+                                </StackPanel>
+                            </Button>
+                            <TextBlock x:Name="PresetStatusText" TextWrapping="Wrap"
+                                       Opacity="0.85"/>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <Border Grid.Column="1" Padding="12"
+                            Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+                            CornerRadius="8">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock x:Name="PresetPreviewTitle" Grid.Row="0"
+                                       Margin="0,0,0,10"
+                                       FontSize="18" FontWeight="SemiBold"/>
+                            <Grid x:Name="PresetPreviewArea" Grid.Row="1"
+                                  SizeChanged="PresetPreviewArea_SizeChanged">
+                                <Viewbox x:Name="PresetPreviewViewbox" Width="634" Height="310"
+                                         HorizontalAlignment="Left" VerticalAlignment="Top"
+                                         Stretch="Uniform" StretchDirection="Both">
+                                    <Grid x:Name="PresetPreviewRoot" Width="634" Height="310"
+                                          HorizontalAlignment="Left" VerticalAlignment="Top"
+                                          RenderTransformOrigin="0,0">
+                                        <Grid.RenderTransform>
+                                            <ScaleTransform x:Name="PresetPreviewScale"
+                                                            ScaleX="1" ScaleY="1"/>
+                                        </Grid.RenderTransform>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="310"/>
+                                            <ColumnDefinition Width="14"/>
+                                            <ColumnDefinition Width="310"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="150"/>
+                                            <RowDefinition Height="10"/>
+                                            <RowDefinition Height="150"/>
+                                        </Grid.RowDefinitions>
+                                        <controls:LargeTile x:Name="PresetLargePreview"
+                                                            Grid.RowSpan="3"
+                                                            Width="310" Height="310"/>
+                                        <controls:WideTile x:Name="PresetWidePreview"
+                                                           Grid.Column="2"
+                                                           Width="310" Height="150"/>
+                                        <Grid Grid.Row="2" Grid.Column="2" Width="310" Height="151"
+                                              HorizontalAlignment="Left" VerticalAlignment="Top">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="150"/>
+                                                <ColumnDefinition Width="9"/>
+                                                <ColumnDefinition Width="71"/>
+                                                <ColumnDefinition Width="9"/>
+                                                <ColumnDefinition Width="71"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="71"/>
+                                                <RowDefinition Height="9"/>
+                                                <RowDefinition Height="71"/>
+                                            </Grid.RowDefinitions>
+                                            <controls:MediumTile x:Name="PresetMediumPreview"
+                                                                 Grid.RowSpan="3"
+                                                                 Width="150" Height="150"
+                                                                 VerticalAlignment="Top"/>
+                                            <controls:SmallFireTile x:Name="PresetSmallFirePreview"
+                                                                   Grid.Column="2" Grid.Row="0"
+                                                                   Width="71" Height="71"
+                                                                   VerticalAlignment="Top"/>
+                                            <controls:SmallDigitalTile x:Name="PresetSmallDigitalPreview"
+                                                                    Grid.Column="4" Grid.Row="0"
+                                                                       Width="71" Height="71"
+                                                                       VerticalAlignment="Top"/>
+                                        </Grid>
+                                    </Grid>
+                                </Viewbox>
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </PivotItem>
+            </Pivot>
+        </Border>
+    </Grid>
+</Page>

@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "DuolingoWidget": {
+      "commandName": "MsixPackage"
+    }
+  }
+}

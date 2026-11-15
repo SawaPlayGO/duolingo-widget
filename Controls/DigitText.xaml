@@ -1,0 +1,134 @@
+<UserControl
+    x:Class="DuolingoWidget.Controls.DigitText"
+    x:Name="Root"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Canvas Width="{Binding OutlineWidth, ElementName=Root}"
+                Height="{Binding OutlineHeight, ElementName=Root}"
+                HorizontalAlignment="Center" VerticalAlignment="Center">
+            <TextBlock Canvas.Left="4" Canvas.Top="4"
+                       Width="{Binding Width, ElementName=Root}"
+                       Height="{Binding Height, ElementName=Root}"
+                       Text="{Binding Streak, ElementName=Root}"
+                       FontFamily="ms-appx:///Assets/Fonts/DIN_Next_Rounded_LT_Pro.ttc#DIN Next Rounded LT Pro"
+                       FontSize="{Binding FontSize, ElementName=Root}"
+                       LineHeight="{Binding FontSize, ElementName=Root}"
+                       TextLineBounds="TrimToCapHeight" FontWeight="Bold"
+                       Foreground="{Binding OutlineBrush, ElementName=Root}"
+                       Visibility="{Binding OutlineVisibility, ElementName=Root}"
+                       VerticalAlignment="Center" TextAlignment="Center" TextWrapping="NoWrap"
+                       RenderTransformOrigin="0.5,0.5">
+                <TextBlock.RenderTransform><TranslateTransform X="-1.5" Y="0"/></TextBlock.RenderTransform>
+            </TextBlock>
+            <TextBlock Canvas.Left="4" Canvas.Top="4"
+                       Width="{Binding Width, ElementName=Root}"
+                       Height="{Binding Height, ElementName=Root}"
+                       Text="{Binding Streak, ElementName=Root}"
+                       FontFamily="ms-appx:///Assets/Fonts/DIN_Next_Rounded_LT_Pro.ttc#DIN Next Rounded LT Pro"
+                       FontSize="{Binding FontSize, ElementName=Root}"
+                       LineHeight="{Binding FontSize, ElementName=Root}"
+                       TextLineBounds="TrimToCapHeight" FontWeight="Bold"
+                       Foreground="{Binding OutlineBrush, ElementName=Root}"
+                       Visibility="{Binding OutlineVisibility, ElementName=Root}"
+                       VerticalAlignment="Center" TextAlignment="Center" TextWrapping="NoWrap"
+                       RenderTransformOrigin="0.5,0.5">
+                <TextBlock.RenderTransform><TranslateTransform X="1.5" Y="0"/></TextBlock.RenderTransform>
+            </TextBlock>
+            <TextBlock Canvas.Left="4" Canvas.Top="4"
+                       Width="{Binding Width, ElementName=Root}"
+                       Height="{Binding Height, ElementName=Root}"
+                       Text="{Binding Streak, ElementName=Root}"
+                       FontFamily="ms-appx:///Assets/Fonts/DIN_Next_Rounded_LT_Pro.ttc#DIN Next Rounded LT Pro"
+                       FontSize="{Binding FontSize, ElementName=Root}"
+                       LineHeight="{Binding FontSize, ElementName=Root}"
+                       TextLineBounds="TrimToCapHeight" FontWeight="Bold"
+                       Foreground="{Binding OutlineBrush, ElementName=Root}"
+                       Visibility="{Binding OutlineVisibility, ElementName=Root}"
+                       VerticalAlignment="Center" TextAlignment="Center" TextWrapping="NoWrap"
+                       RenderTransformOrigin="0.5,0.5">
+                <TextBlock.RenderTransform><TranslateTransform X="0" Y="-1.5"/></TextBlock.RenderTransform>
+            </TextBlock>
+            <TextBlock Canvas.Left="4" Canvas.Top="4"
+                       Width="{Binding Width, ElementName=Root}"
+                       Height="{Binding Height, ElementName=Root}"
+                       Text="{Binding Streak, ElementName=Root}"
+                       FontFamily="ms-appx:///Assets/Fonts/DIN_Next_Rounded_LT_Pro.ttc#DIN Next Rounded LT Pro"
+                       FontSize="{Binding FontSize, ElementName=Root}"
+                       LineHeight="{Binding FontSize, ElementName=Root}"
+                       TextLineBounds="TrimToCapHeight" FontWeight="Bold"
+                       Foreground="{Binding OutlineBrush, ElementName=Root}"
+                       Visibility="{Binding OutlineVisibility, ElementName=Root}"
+                       VerticalAlignment="Center" TextAlignment="Center" TextWrapping="NoWrap"
+                       RenderTransformOrigin="0.5,0.5">
+                <TextBlock.RenderTransform><TranslateTransform X="0" Y="1.5"/></TextBlock.RenderTransform>
+            </TextBlock>
+            <TextBlock Canvas.Left="4" Canvas.Top="4"
+                       Width="{Binding Width, ElementName=Root}"
+                       Height="{Binding Height, ElementName=Root}"
+                       Text="{Binding Streak, ElementName=Root}"
+                       FontFamily="ms-appx:///Assets/Fonts/DIN_Next_Rounded_LT_Pro.ttc#DIN Next Rounded LT Pro"
+                       FontSize="{Binding FontSize, ElementName=Root}"
+                       LineHeight="{Binding FontSize, ElementName=Root}"
+                       TextLineBounds="TrimToCapHeight" FontWeight="Bold"
+                       Foreground="{Binding OutlineBrush, ElementName=Root}"
+                       Visibility="{Binding OutlineVisibility, ElementName=Root}"
+                       VerticalAlignment="Center" TextAlignment="Center" TextWrapping="NoWrap"
+                       RenderTransformOrigin="0.5,0.5">
+                <TextBlock.RenderTransform><TranslateTransform X="-1.1" Y="-1.1"/></TextBlock.RenderTransform>
+            </TextBlock>
+            <TextBlock Canvas.Left="4" Canvas.Top="4"
+                       Width="{Binding Width, ElementName=Root}"
+                       Height="{Binding Height, ElementName=Root}"
+                       Text="{Binding Streak, ElementName=Root}"
+                       FontFamily="ms-appx:///Assets/Fonts/DIN_Next_Rounded_LT_Pro.ttc#DIN Next Rounded LT Pro"
+                       FontSize="{Binding FontSize, ElementName=Root}"
+                       LineHeight="{Binding FontSize, ElementName=Root}"
+                       TextLineBounds="TrimToCapHeight" FontWeight="Bold"
+                       Foreground="{Binding OutlineBrush, ElementName=Root}"
+                       Visibility="{Binding OutlineVisibility, ElementName=Root}"
+                       VerticalAlignment="Center" TextAlignment="Center" TextWrapping="NoWrap"
+                       RenderTransformOrigin="0.5,0.5">
+                <TextBlock.RenderTransform><TranslateTransform X="1.1" Y="-1.1"/></TextBlock.RenderTransform>
+            </TextBlock>
+            <TextBlock Canvas.Left="4" Canvas.Top="4"
+                       Width="{Binding Width, ElementName=Root}"
+                       Height="{Binding Height, ElementName=Root}"
+                       Text="{Binding Streak, ElementName=Root}"
+                       FontFamily="ms-appx:///Assets/Fonts/DIN_Next_Rounded_LT_Pro.ttc#DIN Next Rounded LT Pro"
+                       FontSize="{Binding FontSize, ElementName=Root}"
+                       LineHeight="{Binding FontSize, ElementName=Root}"
+                       TextLineBounds="TrimToCapHeight" FontWeight="Bold"
+                       Foreground="{Binding OutlineBrush, ElementName=Root}"
+                       Visibility="{Binding OutlineVisibility, ElementName=Root}"
+                       VerticalAlignment="Center" TextAlignment="Center" TextWrapping="NoWrap"
+                       RenderTransformOrigin="0.5,0.5">
+                <TextBlock.RenderTransform><TranslateTransform X="-1.1" Y="1.1"/></TextBlock.RenderTransform>
+            </TextBlock>
+            <TextBlock Canvas.Left="4" Canvas.Top="4"
+                       Width="{Binding Width, ElementName=Root}"
+                       Height="{Binding Height, ElementName=Root}"
+                       Text="{Binding Streak, ElementName=Root}"
+                       FontFamily="ms-appx:///Assets/Fonts/DIN_Next_Rounded_LT_Pro.ttc#DIN Next Rounded LT Pro"
+                       FontSize="{Binding FontSize, ElementName=Root}"
+                       LineHeight="{Binding FontSize, ElementName=Root}"
+                       TextLineBounds="TrimToCapHeight" FontWeight="Bold"
+                       Foreground="{Binding OutlineBrush, ElementName=Root}"
+                       Visibility="{Binding OutlineVisibility, ElementName=Root}"
+                       VerticalAlignment="Center" TextAlignment="Center" TextWrapping="NoWrap"
+                       RenderTransformOrigin="0.5,0.5">
+                <TextBlock.RenderTransform><TranslateTransform X="1.1" Y="1.1"/></TextBlock.RenderTransform>
+            </TextBlock>
+            <TextBlock Canvas.Left="4" Canvas.Top="4"
+                       Width="{Binding Width, ElementName=Root}"
+                       Height="{Binding Height, ElementName=Root}"
+                       Text="{Binding Streak, ElementName=Root}"
+                       FontFamily="ms-appx:///Assets/Fonts/DIN_Next_Rounded_LT_Pro.ttc#DIN Next Rounded LT Pro"
+                       FontSize="{Binding FontSize, ElementName=Root}"
+                       LineHeight="{Binding FontSize, ElementName=Root}"
+                       TextLineBounds="TrimToCapHeight" FontWeight="Bold"
+                       Foreground="{Binding DigitBrush, ElementName=Root}"
+                       VerticalAlignment="Center" TextAlignment="Center" TextWrapping="NoWrap"/>
+        </Canvas>
+    </Grid>
+</UserControl>

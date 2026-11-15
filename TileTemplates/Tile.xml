@@ -1,0 +1,16 @@
+<tile launch="openDuolingo">
+  <visual version="3">
+    <binding template="TileSmall" branding="none">
+      <image src="{smallUri}" placement="background"/>
+    </binding>
+    <binding template="TileMedium" branding="none">
+      <image src="{mediumUri}" placement="background"/>
+    </binding>
+    <binding template="TileWide" branding="none">
+      <image src="{wideUri}" placement="background"/>
+    </binding>
+    <binding template="TileLarge" branding="none">
+      <image src="{largeUri}" placement="background"/>
+    </binding>
+  </visual>
+</tile>
