@@ -21,7 +21,7 @@ namespace DuolingoWidget
     {
         private const string PresetSettingKeyPrefix = "ManualPreset.";
         private const string StartPinPromptedSettingKey = "StartPinPrompted";
-        private const string TileNotificationVersion = "2";
+        private const string TileNotificationVersion = "3";
         private readonly ApplicationDataContainer localSettings = ApplicationData.Current.LocalSettings;
         private readonly ResourceLoader strings = ResourceLoader.GetForCurrentView();
         private readonly List<PresetChoice> presetChoices = new List<PresetChoice>();
@@ -485,7 +485,8 @@ namespace DuolingoWidget
                     localSettings.Values["RenderedTileKey"] = renderKey;
                 }
 
-                bool needsTileUpdate = !alreadyRendered ||
+                bool needsTileUpdate = TileUpdaterHelper.TestModeEnabled ||
+                    !alreadyRendered ||
                     localSettings.Values["TileNotificationVersion"] as string != TileNotificationVersion;
                 if (needsTileUpdate)
                 {

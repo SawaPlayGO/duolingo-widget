@@ -82,7 +82,7 @@ namespace DuolingoWidget.Services
             }
 
             await WaitForImagesAsync(control);
-            await WaitForNextFrameAsync();
+            control.UpdateLayout();
 
             uint targetWidth = (uint)Math.Round(control.Width * RenderScale);
             uint targetHeight = (uint)Math.Round(control.Height * RenderScale);
@@ -170,19 +170,6 @@ namespace DuolingoWidget.Services
             }
 
             await Task.WhenAll(pending);
-        }
-
-        private static Task WaitForNextFrameAsync()
-        {
-            var completion = new TaskCompletionSource<bool>();
-            EventHandler<object> handler = null!;
-            handler = (sender, args) =>
-            {
-                CompositionTarget.Rendering -= handler;
-                completion.TrySetResult(true);
-            };
-            CompositionTarget.Rendering += handler;
-            return completion.Task;
         }
 
         private static async Task DetachHandlersWhenCompleteAsync(

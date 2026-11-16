@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.UI.Xaml;
@@ -8,6 +8,7 @@ using Windows.Foundation;
 using Windows.System;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Globalization;
 using DuolingoWidget.Services;
 using Windows.ApplicationModel.Background;
 using Windows.Storage;
@@ -138,6 +139,11 @@ namespace DuolingoWidget
 
             try
             {
+                ApplicationData.Current.LocalSettings.Values[
+                    BackgroundTileTaskRegistration.LastStartedSettingKey] =
+                    DateTime.Now.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+                await TileUpdaterHelper.UpdateTileAsync(updateTimestamp: false);
+
                 MainPage page = null!;
                 if (originalContent is Frame frame && frame.Content is MainPage currentPage)
                 {
