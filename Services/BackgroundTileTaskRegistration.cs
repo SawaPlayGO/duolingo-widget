@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.ApplicationModel;
@@ -11,9 +12,13 @@ namespace DuolingoWidget.Services
     {
         public const string TaskName = "DuolingoTileRefresh";
         public const string LastErrorSettingKey = "LastTileRefreshError";
-        public const string LastStartedSettingKey = "LastBackgroundTileTaskStartedAt";
+        public const string LastRegistrationStatusSettingKey = "BackgroundTileTaskRegistrationStatus";
+        public const string LastRegistrationDetailsSettingKey = "BackgroundTileTaskRegistrationDetails";
+        public const string LastBackgroundTaskStageSettingKey = "LastBackgroundTaskStage";
+        public const string LastBackgroundTaskErrorSettingKey = "LastBackgroundTaskError";
+        public const string LastBackgroundTaskCancellationSettingKey = "LastBackgroundTaskCancellation";
         private const uint IntervalMinutes = 15;
-        private const string RegistrationRevision = "2";
+        private const string RegistrationRevision = "3";
         private const string RegisteredVersionSettingKey = "BackgroundTileTaskRegisteredVersion";
 
         public static async Task<bool> EnsureRegisteredAsync()
@@ -55,20 +60,29 @@ namespace DuolingoWidget.Services
                 accessStatus = await BackgroundExecutionManager.RequestAccessAsync();
             }
 
-            if (refreshRegistration)
-            {
-                settings.Values[RegisteredVersionSettingKey] = currentVersion;
-            }
-
             if (accessStatus == BackgroundAccessStatus.Unspecified ||
                 accessStatus == BackgroundAccessStatus.DeniedByUser ||
                 accessStatus == BackgroundAccessStatus.DeniedBySystemPolicy)
             {
+                int remainingCount = BackgroundTaskRegistration.AllTasks.Values.Count(registration =>
+                    string.Equals(registration.Name, TaskName, StringComparison.Ordinal));
+                settings.Values[LastRegistrationStatusSettingKey] = "NO ACCESS";
+                settings.Values[LastRegistrationDetailsSettingKey] =
+                    "not registered; access=" + accessStatus +
+                    "; count=" + remainingCount +
+                    "; version=" + currentVersion +
+                    "; checked=" + DateTimeOffset.Now.ToString("O", CultureInfo.InvariantCulture);
                 return false;
             }
 
             if (!refreshRegistration && registrations.Length > 0)
             {
+                settings.Values[LastRegistrationStatusSettingKey] = "OK " + registrations.Length;
+                settings.Values[LastRegistrationDetailsSettingKey] =
+                    "registered; access=" + accessStatus +
+                    "; count=" + registrations.Length +
+                    "; version=" + currentVersion +
+                    "; checked=" + DateTimeOffset.Now.ToString("O", CultureInfo.InvariantCulture);
                 return true;
             }
 
@@ -79,9 +93,23 @@ namespace DuolingoWidget.Services
             };
             builder.SetTrigger(new TimeTrigger(IntervalMinutes, false));
             builder.Register();
-            settings.Values[RegisteredVersionSettingKey] = currentVersion;
 
-            return true;
+            int registeredCount = BackgroundTaskRegistration.AllTasks.Values.Count(registration =>
+                string.Equals(registration.Name, TaskName, StringComparison.Ordinal));
+            settings.Values[LastRegistrationStatusSettingKey] = registeredCount > 0
+                ? "OK " + registeredCount
+                : "NO TASK";
+            settings.Values[LastRegistrationDetailsSettingKey] =
+                "register returned; access=" + accessStatus +
+                "; count=" + registeredCount +
+                "; version=" + currentVersion +
+                "; checked=" + DateTimeOffset.Now.ToString("O", CultureInfo.InvariantCulture);
+            if (registeredCount > 0)
+            {
+                settings.Values[RegisteredVersionSettingKey] = currentVersion;
+            }
+
+            return registeredCount > 0;
         }
     }
 }

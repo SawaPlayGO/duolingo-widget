@@ -2,23 +2,15 @@
   <visual version="3">
     <binding template="TileSmall" branding="none">
       <image src="{smallUri}" placement="background"/>
-      {debugTimestamp}
-      {debugBackgroundTimestamp}
     </binding>
     <binding template="TileMedium" branding="none">
       <image src="{mediumUri}" placement="background"/>
-      {debugTimestamp}
-      {debugBackgroundTimestamp}
     </binding>
     <binding template="TileWide" branding="none">
       <image src="{wideUri}" placement="background"/>
-      {debugTimestamp}
-      {debugBackgroundTimestamp}
     </binding>
     <binding template="TileLarge" branding="none">
       <image src="{largeUri}" placement="background"/>
-      {debugTimestamp}
-      {debugBackgroundTimestamp}
     </binding>
   </visual>
 </tile>

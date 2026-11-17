@@ -13,8 +13,17 @@ namespace DuolingoWidget.Services
         public const string MorningPeriod = "morning";
         public const string AfternoonPeriod = "afternoon";
         public const string ActivePeriod = "active";
+        public const string ManualPresetSettingKeyPrefix = "ManualPreset.";
 
         public static TileTheme Select(
+            DuolingoProfile profile,
+            DateTimeOffset currentTime,
+            string? selectedThemeId = null)
+        {
+            return ThemeCatalog.GetById(SelectThemeId(profile, currentTime, selectedThemeId));
+        }
+
+        public static string SelectThemeId(
             DuolingoProfile profile,
             DateTimeOffset currentTime,
             string? selectedThemeId = null)
@@ -22,11 +31,11 @@ namespace DuolingoWidget.Services
             if (profile == null) throw new ArgumentNullException(nameof(profile));
             if (profile.Streak <= 0)
             {
-                return ThemeCatalog.GetById("1_1");
+                return "1_1";
             }
 
             string period = GetCurrentPeriod(profile, currentTime);
-            return SelectForPeriod(profile, currentTime, period, selectedThemeId);
+            return SelectThemeIdForPeriod(profile, currentTime, period, selectedThemeId);
         }
 
         public static string GetCurrentPeriod(DuolingoProfile profile, DateTimeOffset currentTime)
@@ -67,20 +76,30 @@ namespace DuolingoWidget.Services
             string period,
             string? selectedThemeId = null)
         {
+            return ThemeCatalog.GetById(
+                SelectThemeIdForPeriod(profile, currentTime, period, selectedThemeId));
+        }
+
+        private static string SelectThemeIdForPeriod(
+            DuolingoProfile profile,
+            DateTimeOffset currentTime,
+            string period,
+            string? selectedThemeId)
+        {
             if (profile == null) throw new ArgumentNullException(nameof(profile));
             if (profile.Streak <= 0)
             {
-                return ThemeCatalog.GetById("1_1");
+                return "1_1";
             }
 
-            IReadOnlyList<TileTheme> availableThemes = GetPresetsForPeriod(period);
+            IReadOnlyList<string> availableThemeIds = GetPresetThemeIdsForPeriod(period);
             if (!string.IsNullOrEmpty(selectedThemeId))
             {
-                foreach (TileTheme theme in availableThemes)
+                foreach (string themeId in availableThemeIds)
                 {
-                    if (theme.Id == selectedThemeId)
+                    if (themeId == selectedThemeId)
                     {
-                        return theme;
+                        return themeId;
                     }
                 }
             }
@@ -99,17 +118,28 @@ namespace DuolingoWidget.Services
 
         public static IReadOnlyList<TileTheme> GetPresetsForPeriod(string period)
         {
-            GetThemeRange(period, out int row, out int firstColumn, out int lastColumn);
-            var themes = new List<TileTheme>(lastColumn - firstColumn + 1);
-            for (int column = firstColumn; column <= lastColumn; column++)
+            var themes = new List<TileTheme>();
+            foreach (string themeId in GetPresetThemeIdsForPeriod(period))
             {
-                themes.Add(ThemeCatalog.GetById(row + "_" + column));
+                themes.Add(ThemeCatalog.GetById(themeId));
             }
 
             return themes;
         }
 
-        private static TileTheme SelectDailyTheme(
+        private static IReadOnlyList<string> GetPresetThemeIdsForPeriod(string period)
+        {
+            GetThemeRange(period, out int row, out int firstColumn, out int lastColumn);
+            var themeIds = new List<string>(lastColumn - firstColumn + 1);
+            for (int column = firstColumn; column <= lastColumn; column++)
+            {
+                themeIds.Add(row + "_" + column);
+            }
+
+            return themeIds;
+        }
+
+        private static string SelectDailyTheme(
             string username,
             DateTime date,
             string period,
@@ -121,7 +151,7 @@ namespace DuolingoWidget.Services
             byte[] seed = SHA256.HashData(Encoding.UTF8.GetBytes(
                 username + "|" + date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + "|" + period));
             int selectedColumn = firstColumn + (int)(BitConverter.ToUInt32(seed, 0) % (uint)columnCount);
-            return ThemeCatalog.GetById(row + "_" + selectedColumn);
+            return row + "_" + selectedColumn;
         }
 
         private static void GetThemeRange(
