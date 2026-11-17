@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.UI.Xaml;
@@ -8,9 +8,11 @@ using Windows.Foundation;
 using Windows.System;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Globalization;
 using DuolingoWidget.Services;
 using Windows.ApplicationModel.Background;
 using Windows.Storage;
+using Windows.UI.Core;
 
 namespace DuolingoWidget
 {
@@ -131,46 +133,204 @@ namespace DuolingoWidget
                 return;
             }
 
-            BackgroundTaskDeferral deferral = args.TaskInstance.GetDeferral();
-            var window = Window.Current;
-            UIElement originalContent = window.Content;
+            BackgroundTaskDeferral? deferral = null;
+            Window? window = null;
+            CoreDispatcher? dispatcher = null;
+            UIElement? originalContent = null;
+            ApplicationDataContainer? settings = null;
             bool temporaryPageCreated = false;
+            string stage = "GET_DEFERRAL";
 
             try
             {
-                MainPage page = null!;
-                if (originalContent is Frame frame && frame.Content is MainPage currentPage)
-                {
-                    page = currentPage;
-                }
-                else if (originalContent is MainPage directPage)
-                {
-                    page = directPage;
-                }
-                else
-                {
-                    page = new MainPage(true);
-                    window.Content = page;
-                    temporaryPageCreated = true;
-                }
+                deferral = args.TaskInstance.GetDeferral();
+                stage = "OPEN_SETTINGS";
+                settings = ApplicationData.Current.LocalSettings;
+                stage = "ENTRY";
+                settings.Values.Remove(BackgroundTileTaskRegistration.LastBackgroundTaskErrorSettingKey);
+                settings.Values.Remove(
+                    BackgroundTileTaskRegistration.LastBackgroundTaskCancellationSettingKey);
+                await SetBackgroundTaskStageAsync(settings, stage, args.TaskInstance.InstanceId);
 
-                await page.RefreshProfileAndTileAsync();
+                args.TaskInstance.Canceled += (sender, reason) =>
+                {
+                    try
+                    {
+                        settings.Values[
+                            BackgroundTileTaskRegistration.LastBackgroundTaskCancellationSettingKey] =
+                            reason.ToString();
+                        settings.Values[BackgroundTileTaskRegistration.LastBackgroundTaskStageSettingKey] =
+                            "CANCELLED " + stage;
+                        _ = BackgroundTaskDiagnostics.WriteAsync(
+                            "cancelled stage=" + stage + " reason=" + reason);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine("Не удалось записать отмену фоновой задачи: " + ex);
+                    }
+                };
+
+                stage = "GET_WINDOW";
+                await SetBackgroundTaskStageAsync(settings, stage, args.TaskInstance.InstanceId);
+                window = Window.Current;
+
+                stage = "GET_DISPATCHER";
+                await SetBackgroundTaskStageAsync(settings, stage, args.TaskInstance.InstanceId);
+                dispatcher = window?.Dispatcher;
+                if (dispatcher == null)
+                {
+                    stage = "HEADLESS_REFRESH";
+                    await SetBackgroundTaskStageAsync(settings, stage, args.TaskInstance.InstanceId);
+                    await BackgroundTaskDiagnostics.WriteAsync(
+                        "no XAML dispatcher; using background-safe tile refresh");
+                    bool refreshed = await BackgroundTileRefreshService.RefreshAsync();
+                    stage = settings.Values[
+                        BackgroundTileTaskRegistration.LastBackgroundTaskStageSettingKey] as string ??
+                        stage;
+                    await BackgroundTaskDiagnostics.WriteAsync(
+                        "refresh completed success=" + refreshed +
+                        " instance=" + args.TaskInstance.InstanceId.ToString("D", CultureInfo.InvariantCulture));
+                    return;
+                }
+                await BackgroundTaskDiagnostics.WriteAsync(
+                    "dispatcher acquired hasThreadAccess=" + dispatcher.HasThreadAccess);
+
+                stage = "READ_CONTENT_DISPATCH";
+                await SetBackgroundTaskStageAsync(settings, stage, args.TaskInstance.InstanceId);
+                await RunOnDispatcherAsync(dispatcher, () =>
+                {
+                    stage = "READ_CONTENT_CALLBACK";
+                    originalContent = window?.Content;
+                    return Task.CompletedTask;
+                });
+                stage = "READ_CONTENT_COMPLETE";
+                await SetBackgroundTaskStageAsync(settings, stage, args.TaskInstance.InstanceId);
+                await BackgroundTaskDiagnostics.WriteAsync(
+                    "window content read isNull=" + (originalContent == null) +
+                    " type=" + (originalContent == null ? "null" : originalContent.GetType().FullName));
+
+                await RunOnDispatcherAsync(dispatcher, async () =>
+                {
+                    Window targetWindow = window ?? throw new InvalidOperationException(
+                        "Window.Current is unavailable while preparing the foreground page.");
+                    MainPage page;
+                    if (originalContent is Frame frame && frame.Content is MainPage currentPage)
+                    {
+                        page = currentPage;
+                    }
+                    else if (originalContent is MainPage directPage)
+                    {
+                        page = directPage;
+                    }
+                    else
+                    {
+                        stage = "CREATE_PAGE";
+                        page = new MainPage(true);
+                        targetWindow.Content = page;
+                        temporaryPageCreated = true;
+                    }
+
+                    stage = "REFRESH";
+                    await SetBackgroundTaskStageAsync(settings, stage, args.TaskInstance.InstanceId);
+                    bool refreshed = await page.RefreshProfileAndTileAsync(isBackgroundTask: true);
+                    await BackgroundTaskDiagnostics.WriteAsync(
+                        "refresh completed success=" + refreshed +
+                        " instance=" + args.TaskInstance.InstanceId.ToString("D", CultureInfo.InvariantCulture));
+                });
             }
             catch (Exception ex)
             {
                 Debug.WriteLine("Не удалось обновить плитку в фоне: " + ex);
-                ApplicationData.Current.LocalSettings.Values[
-                    BackgroundTileTaskRegistration.LastErrorSettingKey] = ex.Message;
+                string errorCode = unchecked((uint)ex.HResult)
+                    .ToString("X8", CultureInfo.InvariantCulture);
+                if (settings != null)
+                {
+                    settings.Values[BackgroundTileTaskRegistration.LastBackgroundTaskStageSettingKey] = stage;
+                    settings.Values[BackgroundTileTaskRegistration.LastBackgroundTaskErrorSettingKey] =
+                        stage + " " + errorCode;
+                }
+                await BackgroundTaskDiagnostics.WriteExceptionAsync(stage, ex);
+                try
+                {
+                    TileUpdaterHelper.SetDiagnosticError(stage, ex);
+                }
+                catch (Exception diagnosticException)
+                {
+                    Debug.WriteLine("Не удалось записать HRESULT фоновой ошибки: " + diagnosticException);
+                }
             }
             finally
             {
-                if (temporaryPageCreated)
+                try
                 {
-                    window.Content = originalContent;
-                }
+                    if (temporaryPageCreated && window != null && dispatcher != null)
+                    {
+                        if (settings != null)
+                        {
+                            stage = "RESTORE_CONTENT";
+                            await SetBackgroundTaskStageAsync(
+                                settings,
+                                stage,
+                                args.TaskInstance.InstanceId);
+                        }
 
-                deferral.Complete();
+                        await RunOnDispatcherAsync(dispatcher, () =>
+                        {
+                            window.Content = originalContent;
+                            return Task.CompletedTask;
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("Не удалось восстановить содержимое окна после фонового обновления: " + ex);
+                }
+                finally
+                {
+                    if (settings != null)
+                    {
+                        await BackgroundTaskDiagnostics.WriteAsync(
+                            "handler exit stage=" + stage +
+                            " instance=" + args.TaskInstance.InstanceId.ToString(
+                                "D",
+                                CultureInfo.InvariantCulture));
+                    }
+
+                    if (deferral != null)
+                    {
+                        deferral.Complete();
+                    }
+                }
             }
+        }
+
+        private static async Task SetBackgroundTaskStageAsync(
+            ApplicationDataContainer settings,
+            string stage,
+            Guid instanceId)
+        {
+            settings.Values[BackgroundTileTaskRegistration.LastBackgroundTaskStageSettingKey] = stage;
+            await BackgroundTaskDiagnostics.WriteAsync(
+                "stage=" + stage +
+                " instance=" + instanceId.ToString("D", CultureInfo.InvariantCulture));
+        }
+
+        private static async Task RunOnDispatcherAsync(CoreDispatcher dispatcher, Func<Task> action)
+        {
+            var completion = new TaskCompletionSource<bool>();
+            await dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
+            {
+                try
+                {
+                    await action();
+                    completion.TrySetResult(true);
+                }
+                catch (Exception ex)
+                {
+                    completion.TrySetException(ex);
+                }
+            });
+            await completion.Task;
         }
 
         private void OnSuspending(object sender, SuspendingEventArgs e)

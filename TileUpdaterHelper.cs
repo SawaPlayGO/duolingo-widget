@@ -1,6 +1,7 @@
 using System;
+using System.Globalization;
 using System.Threading.Tasks;
-using DuolingoWidget.Models;
+using DuolingoWidget.Services;
 using Windows.Data.Xml.Dom;
 using Windows.Storage;
 using Windows.UI.Notifications;
@@ -9,15 +10,25 @@ namespace DuolingoWidget
 {
     public static class TileUpdaterHelper
     {
+        public const string TileNotificationVersion = "4";
+
+        public static void SetDiagnosticError(string stage, Exception exception)
+        {
+            string errorCode = unchecked((uint)exception.HResult)
+                .ToString("X8", CultureInfo.InvariantCulture);
+            ApplicationData.Current.LocalSettings.Values[
+                BackgroundTileTaskRegistration.LastErrorSettingKey] =
+                stage + ": " + exception.GetType().Name + " (0x" + errorCode + ")";
+        }
+
         public static async Task UpdateTileAsync()
         {
             var settings = ApplicationData.Current.LocalSettings;
-            string themeId = settings.Values["ThemeId"] as string ?? ThemeCatalog.Default.Id;
+            string themeId = settings.Values["ThemeId"] as string ?? "1_1";
             string imageVersion = settings.Values["TileImageVersion"] as string ?? string.Empty;
-            TileTheme theme = ThemeCatalog.GetById(themeId);
 
             var tileFolder = await ApplicationData.Current.LocalFolder.GetFolderAsync("tiles");
-            string filePrefix = theme.Id + (string.IsNullOrEmpty(imageVersion) ? "" : "_" + imageVersion);
+            string filePrefix = themeId + (string.IsNullOrEmpty(imageVersion) ? "" : "_" + imageVersion);
             string smallUri = await GetTileImageUriAsync(tileFolder, filePrefix + "_small.png");
             string mediumUri = await GetTileImageUriAsync(tileFolder, filePrefix + "_medium.png");
             string wideUri = await GetTileImageUriAsync(tileFolder, filePrefix + "_wide.png");

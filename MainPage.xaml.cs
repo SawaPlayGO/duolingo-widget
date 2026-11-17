@@ -19,9 +19,7 @@ namespace DuolingoWidget
 {
     public sealed partial class MainPage : Page
     {
-        private const string PresetSettingKeyPrefix = "ManualPreset.";
         private const string StartPinPromptedSettingKey = "StartPinPrompted";
-        private const string TileNotificationVersion = "2";
         private readonly ApplicationDataContainer localSettings = ApplicationData.Current.LocalSettings;
         private readonly ResourceLoader strings = ResourceLoader.GetForCurrentView();
         private readonly List<PresetChoice> presetChoices = new List<PresetChoice>();
@@ -72,14 +70,33 @@ namespace DuolingoWidget
 
             initialized = true;
             PopulatePresetChoices();
+            localSettings.Values.Remove("TileDiagnosticStatus");
+            localSettings.Values.Remove("LastTileUpdateAt");
+            localSettings.Values.Remove("LastBackgroundTileTaskStartedAt");
+            localSettings.Values.Remove("LastBackgroundTaskStartedUtc");
+            localSettings.Values.Remove("LastBackgroundTaskInstance");
             try
             {
                 backgroundTaskAvailable = await BackgroundTileTaskRegistration.EnsureRegisteredAsync();
+                string registrationStatus = localSettings.Values[
+                    BackgroundTileTaskRegistration.LastRegistrationStatusSettingKey] as string ?? "UNKNOWN";
+                await BackgroundTaskDiagnostics.WriteAsync(
+                    "registration status=" + registrationStatus +
+                    " details=" + (localSettings.Values[
+                    BackgroundTileTaskRegistration.LastRegistrationDetailsSettingKey] as string ?? "none"));
             }
             catch (Exception ex)
             {
                 Debug.WriteLine("Не удалось зарегистрировать фоновое обновление: " + ex);
+                string errorCode = unchecked((uint)ex.HResult)
+                    .ToString("X8", CultureInfo.InvariantCulture);
+                localSettings.Values[BackgroundTileTaskRegistration.LastRegistrationStatusSettingKey] =
+                    "ERR " + errorCode;
+                localSettings.Values[BackgroundTileTaskRegistration.LastRegistrationDetailsSettingKey] =
+                    ex.GetType().Name + " (0x" + errorCode + ")";
+                TileUpdaterHelper.SetDiagnosticError("REGISTER", ex);
                 backgroundTaskAvailable = false;
+                await BackgroundTaskDiagnostics.WriteExceptionAsync("REGISTER", ex);
             }
 
             string lastRefreshError = localSettings.Values[
@@ -421,7 +438,7 @@ namespace DuolingoWidget
         }
 
         private static string GetPresetSettingKey(string period) =>
-            PresetSettingKeyPrefix + period;
+            ThemeSelector.ManualPresetSettingKeyPrefix + period;
 
         private void SaveSettings()
         {
@@ -436,26 +453,51 @@ namespace DuolingoWidget
             localSettings.Values["DuolingoUsername"] = username;
         }
 
-        internal async Task<bool> RefreshProfileAndTileAsync(bool waitForCurrentRefresh = false)
+        internal async Task<bool> RefreshProfileAndTileAsync(
+            bool waitForCurrentRefresh = false,
+            bool isBackgroundTask = false)
         {
             bool lockAcquired = waitForCurrentRefresh
                 ? await refreshLock.WaitAsync(Timeout.Infinite)
                 : await refreshLock.WaitAsync(0);
             if (!lockAcquired)
             {
+                if (isBackgroundTask)
+                {
+                    localSettings.Values[
+                        BackgroundTileTaskRegistration.LastBackgroundTaskStageSettingKey] = "REFRESH_BUSY";
+                    await BackgroundTaskDiagnostics.WriteAsync("refresh skipped: another refresh is active");
+                }
+
                 return false;
             }
 
+            string diagnosticStage = "INPUT";
             try
             {
+                if (isBackgroundTask)
+                {
+                    await BackgroundTaskDiagnostics.WriteAsync("refresh entered");
+                }
+
                 string username = UsernameTextBox.Text.Trim();
                 if (string.IsNullOrWhiteSpace(username))
                 {
                     StatusText.Text = strings.GetString("EnterUsername");
+                    if (isBackgroundTask)
+                    {
+                        await BackgroundTaskDiagnostics.WriteAsync("refresh stopped: username is empty");
+                    }
+
                     return false;
                 }
 
-                DuolingoProfile profile = await DuolingoApiClient.GetProfileAsync(username);
+                diagnosticStage = "API";
+                DuolingoProfile profile = await DuolingoApiClient.GetProfileAsync(
+                    username,
+                    isBackgroundTask);
+
+                diagnosticStage = "PROFILE";
                 DateTimeOffset currentTime = DateTimeOffset.UtcNow;
                 UpdatePresetProfile(profile, currentTime);
                 string period = ThemeSelector.GetCurrentPeriod(profile, currentTime);
@@ -471,6 +513,13 @@ namespace DuolingoWidget
 
                 if (!alreadyRendered)
                 {
+                    diagnosticStage = "RENDER";
+                    if (isBackgroundTask)
+                    {
+                        await BackgroundTaskDiagnostics.WriteAsync(
+                            "render started streak=" + profile.Streak.ToString(CultureInfo.InvariantCulture));
+                    }
+
                     await TileRenderer.RenderThemeAsync(
                         theme,
                         streak,
@@ -481,16 +530,45 @@ namespace DuolingoWidget
                         SmallFireRender,
                         SmallDigitalRender);
 
+                    if (isBackgroundTask)
+                    {
+                        await BackgroundTaskDiagnostics.WriteAsync("render completed");
+                    }
+
+                    diagnosticStage = "SAVE_RENDER";
                     localSettings.Values["ThemeId"] = theme.Id;
                     localSettings.Values["RenderedTileKey"] = renderKey;
                 }
 
                 bool needsTileUpdate = !alreadyRendered ||
-                    localSettings.Values["TileNotificationVersion"] as string != TileNotificationVersion;
+                    localSettings.Values["TileNotificationVersion"] as string !=
+                    TileUpdaterHelper.TileNotificationVersion;
                 if (needsTileUpdate)
                 {
+                    diagnosticStage = "TILE_UPDATE";
+                    if (isBackgroundTask)
+                    {
+                        await BackgroundTaskDiagnostics.WriteAsync("tile update started");
+                    }
+
                     await TileUpdaterHelper.UpdateTileAsync();
-                    localSettings.Values["TileNotificationVersion"] = TileNotificationVersion;
+                    localSettings.Values["TileNotificationVersion"] =
+                        TileUpdaterHelper.TileNotificationVersion;
+                    if (isBackgroundTask)
+                    {
+                        await BackgroundTaskDiagnostics.WriteAsync("tile update completed");
+                    }
+                }
+
+                if (isBackgroundTask)
+                {
+                    localSettings.Values[BackgroundTileTaskRegistration.LastBackgroundTaskStageSettingKey] =
+                        "COMPLETE";
+                    localSettings.Values.Remove(
+                        BackgroundTileTaskRegistration.LastBackgroundTaskErrorSettingKey);
+                    localSettings.Values.Remove(
+                        BackgroundTileTaskRegistration.LastBackgroundTaskCancellationSettingKey);
+                    await BackgroundTaskDiagnostics.WriteAsync("background refresh completed");
                 }
 
                 StatusText.Text = strings.GetString(
@@ -501,7 +579,18 @@ namespace DuolingoWidget
             catch (Exception ex)
             {
                 Debug.WriteLine("Не удалось обновить данные плитки: " + ex);
-                localSettings.Values[BackgroundTileTaskRegistration.LastErrorSettingKey] = ex.Message;
+                if (isBackgroundTask)
+                {
+                    string errorCode = unchecked((uint)ex.HResult)
+                        .ToString("X8", CultureInfo.InvariantCulture);
+                    localSettings.Values[BackgroundTileTaskRegistration.LastBackgroundTaskStageSettingKey] =
+                        diagnosticStage;
+                    localSettings.Values[BackgroundTileTaskRegistration.LastBackgroundTaskErrorSettingKey] =
+                        diagnosticStage + " " + errorCode;
+                    await BackgroundTaskDiagnostics.WriteExceptionAsync(diagnosticStage, ex);
+                }
+                TileUpdaterHelper.SetDiagnosticError(diagnosticStage, ex);
+
                 StatusText.Text = strings.GetString("TileUpdateFailed");
                 return false;
             }

@@ -16,6 +16,7 @@ namespace DuolingoWidget.Services
     public static class TileRenderer
     {
         private const int MaxTileImageBytes = 200 * 1024;
+        private static readonly TimeSpan ImageLoadTimeout = TimeSpan.FromSeconds(6);
         private const int RenderScale = 2;
         private const string SmallDigital = "SmallDigital";
         private const string SmallFire = "SmallFire";
@@ -82,7 +83,7 @@ namespace DuolingoWidget.Services
             }
 
             await WaitForImagesAsync(control);
-            await WaitForNextFrameAsync();
+            control.UpdateLayout();
 
             uint targetWidth = (uint)Math.Round(control.Width * RenderScale);
             uint targetHeight = (uint)Math.Round(control.Height * RenderScale);
@@ -145,6 +146,7 @@ namespace DuolingoWidget.Services
             var images = new List<Image>();
             CollectImages(root, images);
             var pending = new List<Task>();
+            var completePendingImages = new List<Action>();
 
             foreach (var image in images)
             {
@@ -167,22 +169,24 @@ namespace DuolingoWidget.Services
                 }
 
                 pending.Add(DetachHandlersWhenCompleteAsync(image, opened, failed, completion.Task));
+                completePendingImages.Add(() => completion.TrySetResult(true));
             }
 
-            await Task.WhenAll(pending);
-        }
-
-        private static Task WaitForNextFrameAsync()
-        {
-            var completion = new TaskCompletionSource<bool>();
-            EventHandler<object> handler = null!;
-            handler = (sender, args) =>
+            Task allImagesLoaded = Task.WhenAll(pending);
+            Task timeout = Task.Delay(ImageLoadTimeout);
+            if (await Task.WhenAny(allImagesLoaded, timeout) != allImagesLoaded)
             {
-                CompositionTarget.Rendering -= handler;
-                completion.TrySetResult(true);
-            };
-            CompositionTarget.Rendering += handler;
-            return completion.Task;
+                foreach (Action completePendingImage in completePendingImages)
+                {
+                    completePendingImage();
+                }
+
+                await allImagesLoaded;
+                throw new TimeoutException(
+                    "Превышено время ожидания загрузки изображений для рендеринга плитки.");
+            }
+
+            await allImagesLoaded;
         }
 
         private static async Task DetachHandlersWhenCompleteAsync(

@@ -45,31 +45,33 @@ namespace DuolingoWidget.Models
         public BitmapImage WideFireImage { get; private set; }
         public BitmapImage SmallFire32Image { get; private set; }
         public BitmapImage SmallFire64Image { get; private set; }
-        public TileTheme(int row, int col, string digitColor, double digitOpacity, bool showPhrase)
+
+        internal TileTheme(TileThemeInfo info)
         {
-            Row = row;
-            Col = col;
-            Id = row + "_" + col;
-            ShowPhrase = showPhrase;
+            if (info == null) throw new ArgumentNullException(nameof(info));
+            Row = info.Row;
+            Col = info.Col;
+            Id = info.Id;
+            ShowPhrase = info.ShowPhrase;
             DigitBrush = new SolidColorBrush(Color.FromArgb(
-                (byte)Math.Round(digitOpacity * 255),
-                Convert.ToByte(digitColor.Substring(1, 2), 16),
-                Convert.ToByte(digitColor.Substring(3, 2), 16),
-                Convert.ToByte(digitColor.Substring(5, 2), 16)));
+                info.DigitAlpha,
+                info.DigitRed,
+                info.DigitGreen,
+                info.DigitBlue));
             DigitOutlineBrush = new SolidColorBrush(Color.FromArgb(110, 255, 150, 0));
 
-            LargeBackgroundPath = BackgroundPath("large");
-            MediumBackgroundPath = BackgroundPath("medium");
-            WideBackgroundPath = BackgroundPath("wide");
-            SmallBackgroundPath = BackgroundPath("small");
-            LargeDuoPath = DuoPath("large");
-            MediumDuoPath = DuoPath("medium");
-            WideDuoPath = DuoPath("wide");
-            LargeFirePath = FirePath("large");
-            MediumFirePath = FirePath("medium");
-            WideFirePath = FirePath("wide");
-            SmallFire32Path = FirePath("small_32px");
-            SmallFire64Path = FirePath("small_64px");
+            LargeBackgroundPath = info.BackgroundPath("large");
+            MediumBackgroundPath = info.BackgroundPath("medium");
+            WideBackgroundPath = info.BackgroundPath("wide");
+            SmallBackgroundPath = info.BackgroundPath("small");
+            LargeDuoPath = info.DuoPath("large");
+            MediumDuoPath = info.DuoPath("medium");
+            WideDuoPath = info.DuoPath("wide");
+            LargeFirePath = info.FirePath("large");
+            MediumFirePath = info.FirePath("medium");
+            WideFirePath = info.FirePath("wide");
+            SmallFire32Path = info.FirePath("small_32px");
+            SmallFire64Path = info.FirePath("small_64px");
 
             LargeBackgroundImage = Image(LargeBackgroundPath);
             MediumBackgroundImage = Image(MediumBackgroundPath);
@@ -83,22 +85,6 @@ namespace DuolingoWidget.Models
             WideFireImage = Image(WideFirePath);
             SmallFire32Image = Image(SmallFire32Path);
             SmallFire64Image = Image(SmallFire64Path);
-        }
-
-        private string BackgroundPath(string size) =>
-            "ms-appx:///Assets/backgrounds/bg_" + Id + "_" + size + ".png";
-
-        private string DuoPath(string size) =>
-            "ms-appx:///Assets/duo/duo_" + Id + "_" + size + ".png";
-
-        private string FirePath(string size) =>
-            "ms-appx:///Assets/fires/fire_" + GetFireState() + "_" + Id + "_" + size + ".png";
-
-        private string GetFireState()
-        {
-            if (Row == 1) return "off";
-            if (Row == 2) return "warning";
-            return "on";
         }
 
         private static BitmapImage Image(string path) => new BitmapImage(new Uri(path));
