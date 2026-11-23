@@ -39,6 +39,11 @@ jobs:
               throw "Invalid MSIX version component: $part"
             }
           }
+          if ($version.Split('.').Count -eq 4 -and $version.Split('.')[3] -ne '0') {
+            throw 'Microsoft Store packages must use revision 0 (for example, v0.1.3.0).'
+          }
+
+          $publisher = 'CN=62C47CE3-AD0D-45FD-B96C-2726515AE3C7'
 
           $manifestPath = (Resolve-Path '.\Package.appxmanifest').Path
           [xml]$manifest = [System.IO.File]::ReadAllText($manifestPath)
@@ -64,7 +69,7 @@ jobs:
             $securePassword = ConvertTo-SecureString $certificatePassword -AsPlainText -Force
             $certificate = New-SelfSignedCertificate `
               -Type CodeSigningCert `
-              -Subject 'CN=sawaplaygo' `
+              -Subject $publisher `
               -FriendlyName 'DuolingoWidget release signing' `
               -CertStoreLocation 'Cert:\CurrentUser\My' `
               -KeyAlgorithm RSA `
@@ -84,14 +89,14 @@ jobs:
               -CertStoreLocation 'Cert:\CurrentUser\My' `
               -Password $securePassword
             $certificate = $importedCertificates |
-              Where-Object { $_.Subject -eq 'CN=sawaplaygo' -and $_.HasPrivateKey } |
+              Where-Object { $_.Subject -eq $publisher -and $_.HasPrivateKey } |
               Select-Object -First 1
             if (-not $certificate) {
-              throw 'The PFX did not import a private signing certificate with subject CN=sawaplaygo.'
+              throw "The PFX did not import a private signing certificate with subject $publisher."
             }
           }
-          if ($certificate.Subject -ne 'CN=sawaplaygo') {
-            throw 'The signing certificate subject must match Publisher="CN=sawaplaygo" in Package.appxmanifest.'
+          if ($certificate.Subject -ne $publisher) {
+            throw "The signing certificate subject must match Publisher=`"$publisher`" in Package.appxmanifest."
           }
           if (-not $certificate.HasPrivateKey) {
             throw 'The PFX must contain a private signing key.'
