@@ -10,7 +10,7 @@ namespace DuolingoWidget
 {
     public static class TileUpdaterHelper
     {
-        public const string TileNotificationVersion = "4";
+        public const string TileNotificationVersion = "5";
 
         public static void SetDiagnosticError(string stage, Exception exception)
         {

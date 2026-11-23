@@ -72,7 +72,7 @@ namespace DuolingoWidget.Models
                     bool isDefault = row == 1 && col == 1;
                     string color = isDefault ? "#284D1B" : "#FFFFFF";
                     double opacity = isDefault ? 0.5 : 0.8;
-                    bool showPhrase = row != 3;
+                    bool showPhrase = true;
                     themes.Add(new TileThemeInfo(row, col, color, opacity, showPhrase));
                 }
             }

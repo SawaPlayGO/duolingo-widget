@@ -507,7 +507,7 @@ namespace DuolingoWidget
                 TileTheme theme = ThemeSelector.Select(profile, currentTime, selectedThemeId);
                 string streak = profile.Streak.ToString(CultureInfo.InvariantCulture);
                 string smallVariant = ThemeSelector.GetDailySmallTileVariant(profile, currentTime);
-                string renderKey = theme.Id + "|" + streak + "|" + smallVariant;
+                string renderKey = theme.Id + "|" + streak + "|" + smallVariant + "|5";
                 bool alreadyRendered = localSettings.Values["RenderedTileKey"] as string == renderKey &&
                     !string.IsNullOrEmpty(localSettings.Values["TileImageVersion"] as string);
 
