@@ -19,17 +19,13 @@ jobs:
 
       - uses: microsoft/setup-msbuild@v2
 
-      - name: Build signed multi-architecture MSIX bundle
+      - name: Build signed release assets
         shell: pwsh
         env:
           MSIX_CERTIFICATE_BASE64: ${{ secrets.MSIX_CERTIFICATE_BASE64 }}
           MSIX_CERTIFICATE_PASSWORD: ${{ secrets.MSIX_CERTIFICATE_PASSWORD }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
-          if ([string]::IsNullOrWhiteSpace($env:MSIX_CERTIFICATE_BASE64)) {
-            throw 'Set the MSIX_CERTIFICATE_BASE64 GitHub secret.'
-          }
-
           $version = $env:RELEASE_TAG -replace '^[vV]', ''
           if ($version -notmatch '^\d+\.\d+\.\d+(\.\d+)?$') {
             throw 'Use a numeric release tag such as v0.1.0 or v0.1.0.4.'
@@ -54,17 +50,59 @@ jobs:
           $manifest.Save($manifestPath)
 
           $certificatePath = Join-Path $env:RUNNER_TEMP 'DuolingoWidget-signing.pfx'
-          $certificateBytes = [Convert]::FromBase64String($env:MSIX_CERTIFICATE_BASE64)
-          [System.IO.File]::WriteAllBytes($certificatePath, $certificateBytes)
-          $certificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
-            $certificatePath,
-            $env:MSIX_CERTIFICATE_PASSWORD)
+          $certificatePassword = $env:MSIX_CERTIFICATE_PASSWORD
+          if ([string]::IsNullOrWhiteSpace($env:MSIX_CERTIFICATE_BASE64)) {
+            $randomBytes = New-Object byte[] 32
+            $randomGenerator = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+            try {
+              $randomGenerator.GetBytes($randomBytes)
+            }
+            finally {
+              $randomGenerator.Dispose()
+            }
+            $certificatePassword = [Convert]::ToBase64String($randomBytes)
+            $securePassword = ConvertTo-SecureString $certificatePassword -AsPlainText -Force
+            $certificate = New-SelfSignedCertificate `
+              -Type CodeSigningCert `
+              -Subject 'CN=sawaplaygo' `
+              -FriendlyName 'DuolingoWidget release signing' `
+              -CertStoreLocation 'Cert:\CurrentUser\My' `
+              -KeyAlgorithm RSA `
+              -KeyLength 2048 `
+              -HashAlgorithm SHA256 `
+              -KeyExportPolicy Exportable `
+              -NotAfter (Get-Date).AddYears(5)
+            Export-PfxCertificate -Cert $certificate -FilePath $certificatePath `
+              -Password $securePassword | Out-Null
+          }
+          else {
+            $certificateBytes = [Convert]::FromBase64String($env:MSIX_CERTIFICATE_BASE64)
+            [System.IO.File]::WriteAllBytes($certificatePath, $certificateBytes)
+            $securePassword = ConvertTo-SecureString $certificatePassword -AsPlainText -Force
+            $importedCertificates = Import-PfxCertificate `
+              -FilePath $certificatePath `
+              -CertStoreLocation 'Cert:\CurrentUser\My' `
+              -Password $securePassword
+            $certificate = $importedCertificates |
+              Where-Object { $_.Subject -eq 'CN=sawaplaygo' -and $_.HasPrivateKey } |
+              Select-Object -First 1
+            if (-not $certificate) {
+              throw 'The PFX did not import a private signing certificate with subject CN=sawaplaygo.'
+            }
+          }
           if ($certificate.Subject -ne 'CN=sawaplaygo') {
             throw 'The signing certificate subject must match Publisher="CN=sawaplaygo" in Package.appxmanifest.'
           }
           if (-not $certificate.HasPrivateKey) {
             throw 'The PFX must contain a private signing key.'
           }
+          $certificateThumbprint = $certificate.Thumbprint
+          New-Item -ItemType Directory -Path 'artifacts' -Force | Out-Null
+          $publicCertificatePath = Join-Path 'artifacts' "DuolingoWidget-$version.cer"
+          [System.IO.File]::WriteAllBytes(
+            $publicCertificatePath,
+            $certificate.Export(
+              [System.Security.Cryptography.X509Certificates.X509ContentType]::Cert))
           $certificate.Dispose()
 
           $msbuildArgs = @(
@@ -79,7 +117,8 @@ jobs:
             '/p:AppxBundle=Always',
             '/p:AppxBundlePlatforms=x86|x64|arm64',
             "/p:PackageCertificateKeyFile=$certificatePath",
-            "/p:PackageCertificatePassword=$env:MSIX_CERTIFICATE_PASSWORD",
+            "/p:PackageCertificatePassword=$certificatePassword",
+            "/p:PackageCertificateThumbprint=$certificateThumbprint",
             '/p:AppxPackageDir=artifacts\package\'
           )
           & msbuild @msbuildArgs
@@ -92,11 +131,61 @@ jobs:
             throw "Expected one MSIX bundle, found $($bundles.Count)."
           }
           Copy-Item -LiteralPath $bundles[0].FullName -Destination "artifacts\DuolingoWidget-$version.msixbundle"
+          $releaseBundlePath = "artifacts\DuolingoWidget-$version.msixbundle"
+
+          $exePath = 'bin\x64\Release\net9.0-windows10.0.26100.0\win-x64\DuolingoWidget.exe'
+          if (-not (Test-Path -LiteralPath $exePath)) {
+            throw "Expected application executable at $exePath."
+          }
+          $releaseExePath = "artifacts\DuolingoWidget-$version-x64.exe"
+          Copy-Item -LiteralPath $exePath -Destination $releaseExePath
+
+          $sdkBinPath = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10\bin'
+          $signtool = Get-ChildItem -LiteralPath $sdkBinPath -Directory |
+            Where-Object { $_.Name -match '^\d+(\.\d+){2,3}$' } |
+            Sort-Object { [version]$_.Name } -Descending |
+            ForEach-Object { Join-Path $_.FullName 'x64\signtool.exe' } |
+            Where-Object { Test-Path -LiteralPath $_ } |
+            Select-Object -First 1
+          if (-not $signtool) {
+            throw 'Windows SDK signtool.exe was not found.'
+          }
+          & certutil.exe -f -user -addstore Root $publicCertificatePath
+          if ($LASTEXITCODE -ne 0) {
+            throw 'The signing certificate could not be temporarily trusted for signature verification.'
+          }
+          & $signtool verify /pa /v $releaseBundlePath
+          if ($LASTEXITCODE -ne 0) {
+            throw 'The MSIX bundle signature could not be verified by SignTool.'
+          }
+          $signArgs = @('sign', '/fd', 'SHA256', '/f', $certificatePath)
+          if (-not [string]::IsNullOrEmpty($certificatePassword)) {
+            $signArgs += @('/p', $certificatePassword)
+          }
+          $signArgs += $releaseExePath
+          & $signtool @signArgs
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+          & $signtool verify /pa /v $releaseExePath
+          if ($LASTEXITCODE -ne 0) {
+            throw 'The application executable signature could not be verified by SignTool.'
+          }
+
+          & certutil.exe -f -user -delstore Root $certificateThumbprint
+          if ($LASTEXITCODE -ne 0) {
+            throw 'The temporary signing certificate trust could not be removed.'
+          }
+          Remove-Item -LiteralPath $certificatePath -Force
+          Remove-Item -LiteralPath "Cert:\CurrentUser\My\$certificateThumbprint" -Force
 
       - uses: actions/upload-artifact@v4
         with:
-          name: signed-msixbundle
-          path: artifacts/*.msixbundle
+          name: release-assets
+          path: |
+            artifacts/*.msixbundle
+            artifacts/*.exe
+            artifacts/*.cer
           if-no-files-found: error
           retention-days: 1
 
@@ -108,10 +197,13 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: signed-msixbundle
+          name: release-assets
           path: artifacts
 
       - uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/*.msixbundle
+          files: |
+            artifacts/*.msixbundle
+            artifacts/*.exe
+            artifacts/*.cer
           fail_on_unmatched_files: true

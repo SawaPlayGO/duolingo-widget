@@ -9,7 +9,7 @@
 	<Identity
 	  Name="85dfb3c8-70e1-4e74-9810-444fe023f557"
 	  Publisher="CN=sawaplaygo"
-	  Version="0.1.0.1" />
+	  Version="0.1.0.2" />
 
 	<mp:PhoneIdentity PhoneProductId="85dfb3c8-70e1-4e74-9810-444fe023f557" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
